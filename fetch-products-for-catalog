@@ -1,0 +1,43 @@
+// fetch-urbanstems.js
+// ---------------------------------
+// Usage:
+//   npm install node-fetch
+//   node fetch-urbanstems.js > urbanstems_catalog.json
+
+import fetch from 'node-fetch';
+
+async function fetchAllProducts() {
+  const perPage = 50;
+  let page = 1;
+  let all = [];
+
+  while (true) {
+    const url = `https://urbanstems.com/collections/flowers/products.json?limit=${perPage}&page=${page}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Shopify API returned ${res.status}`);
+    const data = await res.json();
+    if (!data.products.length) break;
+
+    all = all.concat(data.products);
+    page++;
+  }
+
+  return all.slice(0, 100);
+}
+
+function normalize(product) {
+  return {
+    id: product.handle,
+    title: product.title,
+    description: product.body_html.replace(/<\/?[^>]+(>|$)/g, '').trim(),
+    price: `$${product.variants[0].price}`,
+    image_url: product.images[0]?.src || null,
+    product_url: `https://urbanstems.com/products/${product.handle}`,
+  };
+}
+
+(async () => {
+  const prods = await fetchAllProducts();
+  const catalog = prods.map(normalize);
+  console.log(JSON.stringify(catalog, null, 2));
+})();
