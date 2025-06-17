@@ -1,0 +1,56 @@
+Shopify Connected Content for graphql example 
+
+{% capture event %}
+[
+  {
+    "name": "abandon_cart",
+    "time": "2023-10-19T12:02:38-04:00",
+    "properties": {"cart_id":"a301e044eb3045f6d0d49018f7ed0925","line_items":[{"price":29.0,"product_id":6868439334981,"properties":{},"quantity":1,"sku":"10-081-077","title":"FetishEYES™ Longwear Liquid Eye Shadow - Luna Rose (Luminous Rose Gold with Sparkling Platinum Pearl)","variant_id":6929893261430,"vendor":"PAT McGRATH LABS"},{"price":22.0,"product_id":6909695328325,"properties":{},"quantity":1,"sku":"19-001-1008","title":"Bijoux Brilliance Eye Shadow Palette - Bordeaux Bliss","variant_id":6929893425270,"vendor":"PAT McGRATH LABS"}],"shopify_storefront":"pat-mcgrath.myshopify.com"},
+    "braze_id": "65270034b9b3ae0001a2f1a1"
+  }
+]
+{% endcapture %}
+
+
+{% assign abandon_event = event | json_parse %}
+{% assign line_items = {{abandon_event[0].properties.line_items}} %}
+{% assign variant_ids = '' %}
+{% for i in line_items %}
+  {% if forloop.first == false %}
+    {% assign variant_ids = variant_ids | append: ',' %}
+  {% endif %}
+  {% assign variant_ids = variant_ids | append: i.variant_id %}
+{% endfor %}
+{% assign variant_ids_array = variant_ids | split: ',' %}
+{% assign query_parts = '' %}
+{% for variant_id in variant_ids_array %}
+  {% if forloop.first == false %}
+    {% assign query_parts = query_parts | append: ' OR ' %}
+  {% endif %}
+  {% assign query_parts = query_parts | append: '(id:' | append: variant_id | append: ')' %}
+{% endfor %}
+
+
+
+
+## body capture for graphql 
+
+{% capture postbody %}
+{"query":"{products(first: 10, query: \"{{query_parts}}\"){edges {node {id title}}}}"}
+{% endcapture %}
+
+
+
+## connected content call 
+
+{% connected_content
+     https://matt-d-test.myshopify.com/api/2023-10/graphql.json
+     :method post
+     :headers {
+       "X-Shopify-Storefront-Access-Token": "80d263e9489f95dd34108fa506850309"
+  }
+     :body {{postbody}}
+     :content_type application/json
+     :save response
+%}
+{{response}}
