@@ -1,0 +1,57 @@
+## purchase generator in batches 
+
+const axios = require('axios');
+
+// CONFIGURATION
+const BRAZE_API_KEY = '9297a126-0264-4e69-954f-6df13c662a7f';
+const BRAZE_REST_ENDPOINT = 'https://sondheim.braze.com'; // e.g., https://rest.iad-01.braze.com
+const BATCH_SIZE = 10; // number of events per request
+const TOTAL_BATCHES = 500; // total number of requests
+const START_INDEX = 451; // starting index for product SKUs
+const BASE_SKU = 'urbanstems';
+const BASE_EMAIL = 'qa+purchase-test+';
+
+// BRAZE TRACK URL
+const BRAZE_TRACK_URL = `${BRAZE_REST_ENDPOINT}/users/track`;
+
+// Create one Braze purchase object
+function buildPurchase(index) {
+  return {
+    external_id: `${BASE_SKU}${index}`, // required for identifying the user
+    time: new Date().toISOString(),
+    product_id: `${BASE_SKU}${index}`,
+    currency: 'USD',
+    price: 50.00,
+    quantity: 2,
+  };
+}
+
+// Send batches of purchases
+(async () => {
+  for (let batchIndex = 0; batchIndex < TOTAL_BATCHES; batchIndex++) {
+    const purchases = [];
+    const start = START_INDEX + batchIndex * BATCH_SIZE;
+
+    for (let i = 0; i < BATCH_SIZE; i++) {
+      const index = start + i;
+      purchases.push(buildPurchase(index));
+    }
+
+    const payload = { purchases };
+
+    try {
+      const response = await axios.post(BRAZE_TRACK_URL, payload, {
+        headers: {
+          Authorization: `Bearer ${BRAZE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log(`✅ Batch ${batchIndex + 1}/${TOTAL_BATCHES} sent - Starting SKU: ${BASE_SKU}${start} - Status: ${response.status}`);
+    } catch (error) {
+      console.error(`❌ Batch ${batchIndex + 1} failed - ${error.response?.status}:`, error.response?.data || error.message);
+    }
+  }
+
+  console.log('🎉 All 500 purchase batches sent.');
+})();
