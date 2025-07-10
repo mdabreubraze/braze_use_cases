@@ -2,7 +2,7 @@
 // ---------------------------------
 // Usage:
 //   npm install node-fetch
-//   node fetch-urbanstems.js > urbanstems_catalog.json
+//   node <file_name.js> 
 
 import fetch from 'node-fetch';
 
