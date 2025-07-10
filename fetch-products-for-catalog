@@ -2,7 +2,7 @@
 // ---------------------------------
 // Usage:
 //   npm install node-fetch
-//   node <file_name.js> 
+//   node [file_name.js] > [file_name.json]
 
 import fetch from 'node-fetch';
 
